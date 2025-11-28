@@ -1,12 +1,12 @@
 import os
 import json
-from flask import Flask, request, jsonify
-from telegram import Bot, Update
-from telegram.ext import Application
+from flask import Flask, request
+from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.constants import WebAppInfo
 
 app = Flask(__name__)
 
-# Token từ Environment Variable (an toàn)
+# Token từ Environment Variable
 TOKEN = os.environ.get('TELEGRAM_TOKEN', '7996792257:AAFf4YdcWX8nyCDXFwQLRhF0wsq6ZgAkf_0')
 bot = Bot(token=TOKEN)
 
@@ -26,20 +26,22 @@ def set_webhook():
 @app.route('/webhook', methods=['POST'])
 def webhook():
     try:
-        # Lấy JSON từ Telegram
-        json_str = request.get_data(as_text=True)
-        update = Update.de_json(json.loads(json_str), bot)
+        json_str = request.get_json(force=True)
+        if not json_str:
+            return 'No JSON received', 400
         
-        if update and update.message:
-            if '/start' in update.message.text:
-                keyboard = [[InlineKeyboardButton("🎰 Chơi Tiến Lên Miền Nam", web_app=WebAppInfo("https://tienlen-miniapp.netlify.app"))]]
-                reply_markup = InlineKeyboardMarkup(keyboard)
-                bot.send_message(chat_id=update.message.chat.id, text="Mở bàn chơi ngay nào!", reply_markup=reply_markup)
-                return 'OK'
+        update = Update.de_json(json_str, bot)
+        if not update:
+            return 'Invalid update', 400
+        
+        if update.message and update.message.text and '/start' in update.message.text:
+            keyboard = [[InlineKeyboardButton("🎰 Chơi Tiến Lên Miền Nam", web_app=WebAppInfo("https://tienlen-miniapp.netlify.app"))]]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            bot.send_message(chat_id=update.message.chat.id, text="Mở bàn chơi ngay nào!", reply_markup=reply_markup)
         
         return 'OK'
     except Exception as e:
-        return f'Webhook error: {str(e)}'
+        return f'Webhook error: {str(e)}', 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
