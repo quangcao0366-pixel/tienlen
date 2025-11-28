@@ -2,7 +2,7 @@ import os
 import json
 from flask import Flask, request
 from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.constants import WebAppInfo
+from telegram import WebAppInfo
 
 app = Flask(__name__)
 
